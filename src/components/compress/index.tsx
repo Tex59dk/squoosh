@@ -164,6 +164,7 @@ const buttonPositions =
 
 export default class Compress extends Component<Props, State> {
   widthQuery = window.matchMedia('(max-width: 599px)');
+  compressionJobs: [Promise<void>, Promise<void>] = [Promise.resolve(), Promise.resolve()];
 
   state: State = {
     source: undefined,
@@ -245,7 +246,7 @@ export default class Compress extends Component<Props, State> {
       // source has changed.
       if (sourceChanged || encoderChanged || preprocessorChanged) {
         if (prevImage.downloadUrl) URL.revokeObjectURL(prevImage.downloadUrl);
-        this.updateImage(i, {
+        this.compressionJobs[i] = this.updateImage(i, {
           skipPreprocessing: !sourceChanged && !preprocessorChanged,
         }).catch((err) => {
           console.error(err);
@@ -352,7 +353,9 @@ export default class Compress extends Component<Props, State> {
       loading: true,
     });
 
-    this.setState({ images });
+    this.setState({ images }, () => this.base!.dispatchEvent(
+      new CustomEvent('squooshingdone', { bubbles: true }),
+    ));
 
     const image = images[index];
 
